@@ -1,7 +1,9 @@
 package gen
 
 import (
+	"bytes"
 	_ "embed"
+	"go/format"
 	"strings"
 
 	"text/template"
@@ -21,8 +23,9 @@ var fns = template.FuncMap{
 var tmplGet = template.Must(template.New("").Funcs(fns).Parse(tmpl))
 
 type FnArg struct {
-	Literal string
-	Type    string
+	Expr string
+	Name string
+	Type string
 }
 
 type TemplateData struct {
@@ -35,8 +38,20 @@ type TemplateData struct {
 
 var TrIsInternal = grr.NewTrait("IsInternal")
 
-func GenerateErrorFile(grrImportPath string, pkgName string, errMsg string, args ...FnArg) (string, error) {
+type GenerateFileArgs struct {
+	Imports []string
+	PkgName string
+	ErrMsg  string
+	Args    []FnArg
+}
+
+func GenerateErrorFile(params GenerateFileArgs) (string, error) {
 	op := "Generate"
+
+	errMsg := params.ErrMsg
+	pkgName := params.PkgName
+	args := params.Args
+	imports := params.Imports
 
 	if len(errMsg) == 0 || errMsg == "\"\"" {
 		return "", grr.Errorf("NoErrorMessage: error message not found").
@@ -55,22 +70,16 @@ func GenerateErrorFile(grrImportPath string, pkgName string, errMsg string, args
 	split := strings.Split(errMsg, ":")
 
 	// extract the error name from the message
-	errName := strings.TrimSpace(split[0])
+	errName := "Err" + strings.TrimSpace(split[0])
 
 	if errName == "" {
 		return "", grr.Errorf("NoErrorName: error name not found in error message")
 	}
 
-	imports := []string{
-		"fmt",
-		"reflect",
-		grrImportPath,
-	}
-
 	// extract the error message from the message
 	errMsg = strings.TrimSpace(strings.Join(split[1:], ""))
 
-	var buf strings.Builder
+	var buf bytes.Buffer
 
 	err := tmplGet.Execute(&buf, TemplateData{
 		PkgName: pkgName,
@@ -81,11 +90,23 @@ func GenerateErrorFile(grrImportPath string, pkgName string, errMsg string, args
 	})
 
 	if err != nil {
-		return "", grr.Errorf("FailedToExecuteTemplate: something went wrong while generating").
+		return "", grr.Errorf("FailedToExecuteTemplate: something went wrong while generating: %v", strings.Builder{}).
 			AddError(err).
 			AddTrait(TrIsInternal, "true").
 			AddOp(op)
 	}
 
-	return buf.String(), nil
+	fmted, err := format.Source(buf.Bytes())
+
+	if err != nil {
+		return "", grr.Errorf("FailedToFormatSource: something went wrong while formatting source: %v", strings.Builder{}).
+			AddError(err).
+			AddOp(op)
+	}
+
+	return string(fmted), nil
+}
+
+func GenDefaultImports() []string {
+	return []string{"fmt", "reflect"}
 }

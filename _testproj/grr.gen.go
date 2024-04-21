@@ -76,7 +76,6 @@ func (e *MyError) GetTraits() map[grr.Trait]string {
 	return traits
 }
 
-
 func (e *MyError) AddOp(op string) grr.Error {
   e.op = op
   return e
@@ -92,11 +91,6 @@ func (e *MyError) AddError(err error) grr.Error {
 }
 
 func (e *MyError) Trace() {
-	// trace like so:
-	// an error occured; op: SomeOp
-	// |- the next level error
-	// |- the next level error
-
 	var err error = e
 	var errs []error
 

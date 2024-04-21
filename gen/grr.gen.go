@@ -2,32 +2,35 @@ package gen
 
 import (
 	"fmt"
-	"reflect"
-
 	"github.com/whiskaway/grr/grr"
+	"reflect"
+	"strings"
 )
 
-type FailedToExecuteTemplate struct {
-	err    error
-	op     string
-	traits map[grr.Trait]string
+type FailedToFormatSource struct {
+	err            error
+	op             string
+	traits         map[grr.Trait]string
+	stringsBuilder strings.Builder
 }
 
-var _ grr.Error = &FailedToExecuteTemplate{}
+var _ grr.Error = &FailedToFormatSource{}
 
-func NewFailedToExecuteTemplate() grr.Error {
-	return &FailedToExecuteTemplate{}
+func NewFailedToFormatSource(stringsBuilder strings.Builder) grr.Error {
+	return &FailedToFormatSource{
+		stringsBuilder: stringsBuilder,
+	}
 }
 
-func (e *FailedToExecuteTemplate) Error() string {
-	return fmt.Sprintf("something went wrong while generating")
+func (e *FailedToFormatSource) Error() string {
+	return fmt.Sprintf("something went wrong while formatting source %v", e.stringsBuilder)
 }
 
-func (e *FailedToExecuteTemplate) Unwrap() error {
+func (e *FailedToFormatSource) Unwrap() error {
 	return e.err
 }
 
-func (e *FailedToExecuteTemplate) AsGrr(err grr.Error) (grr.Error, bool) {
+func (e *FailedToFormatSource) AsGrr(err grr.Error) (grr.Error, bool) {
 	E := reflect.TypeOf(err)
 
 	var last error = e.err
@@ -49,22 +52,22 @@ func (e *FailedToExecuteTemplate) AsGrr(err grr.Error) (grr.Error, bool) {
 	}
 }
 
-func (e *FailedToExecuteTemplate) IsGrr(err grr.Error) bool {
+func (e *FailedToFormatSource) IsGrr(err grr.Error) bool {
 	_, ok := e.AsGrr(err)
 	return ok
 }
 
-func (e *FailedToExecuteTemplate) AddTrait(trait grr.Trait, value string) grr.Error {
+func (e *FailedToFormatSource) AddTrait(trait grr.Trait, value string) grr.Error {
 	e.traits[trait] = value
 	return e
 }
 
-func (e *FailedToExecuteTemplate) GetTrait(key grr.Trait) (string, bool) {
+func (e *FailedToFormatSource) GetTrait(key grr.Trait) (string, bool) {
 	trait, ok := e.traits[key]
 	return trait, ok
 }
 
-func (e *FailedToExecuteTemplate) GetTraits() map[grr.Trait]string {
+func (e *FailedToFormatSource) GetTraits() map[grr.Trait]string {
 	traits := make(map[grr.Trait]string)
 	for k, v := range e.traits {
 		traits[k] = v
@@ -72,21 +75,21 @@ func (e *FailedToExecuteTemplate) GetTraits() map[grr.Trait]string {
 	return traits
 }
 
-func (e *FailedToExecuteTemplate) AddOp(op string) grr.Error {
+func (e *FailedToFormatSource) AddOp(op string) grr.Error {
 	e.op = op
 	return e
 }
 
-func (e *FailedToExecuteTemplate) GetOp() string {
+func (e *FailedToFormatSource) GetOp() string {
 	return e.op
 }
 
-func (e *FailedToExecuteTemplate) AddError(err error) grr.Error {
+func (e *FailedToFormatSource) AddError(err error) grr.Error {
 	e.err = err
 	return e
 }
 
-func (e *FailedToExecuteTemplate) Trace() {
+func (e *FailedToFormatSource) Trace() {
 	var err error = e
 	var errs []error
 

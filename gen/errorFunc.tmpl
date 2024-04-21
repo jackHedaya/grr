@@ -13,22 +13,22 @@ type {{ .ErrName }} struct {
   traits map[grr.Trait]string
 
   {{- range .Vars }}
-  {{ .Literal }} {{ .Type }}
+  {{ .Name }} {{ .Type }}
   {{- end }}
 }
 
 var _ grr.Error = &{{ .ErrName }}{}
 
-func New{{ .ErrName }}({{ range $i, $pair := .Vars }}{{ $pair.Literal }} {{ $pair.Type }}{{ if notlast $i $varlen}}, {{ end }}{{ end }}) grr.Error {
+func New{{ .ErrName }}({{ range $i, $pair := .Vars }}{{ $pair.Name }} {{ $pair.Type }}{{ if notlast $i $varlen}}, {{ end }}{{ end }}) grr.Error {
   return &{{ .ErrName }}{
     {{- range .Vars }}
-    {{ .Literal }}: {{ .Literal }},
+    {{ .Name }}: {{ .Name }},
     {{- end }}
   }
 }
 
 func (e *{{ .ErrName }}) Error() string {
-  return fmt.Sprintf("{{ .Message }}", {{ range $i, $pair := .Vars }}e.{{ $pair.Literal }}{{ if notlast $i $varlen}}, {{ end }}{{ end }})
+  return fmt.Sprintf("{{ .Message }}", {{ range $i, $pair := .Vars }}e.{{ $pair.Name }}{{ if notlast $i $varlen}}, {{ end }}{{ end }})
 }
 
 func (e *{{ .ErrName }}) Unwrap() error {
@@ -80,7 +80,6 @@ func (e *{{ .ErrName }}) GetTraits() map[grr.Trait]string {
 	}
 	return traits
 }
-
 
 func (e *{{ .ErrName }}) AddOp(op string) grr.Error {
   e.op = op
