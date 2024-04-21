@@ -1,0 +1,90 @@
+{{$varlen := len .Vars}}
+
+type {{ .ErrName }} struct {
+  err error
+  op string
+  traits map[grr.Trait]string
+
+  {{- range .Vars }}
+  {{ .Literal }} {{ .Type }}
+  {{- end }}
+}
+
+var _ grr.Error = &{{ .ErrName }}{}
+
+func (e *{{ .ErrName }}) Error() string {
+  return fmt.Sprintf("{{ .Message }}", {{ range $i, $pair := .Vars }}e.{{ $pair.Literal }}{{ if notlast $i $varlen}}, {{ end }}{{ end }})
+}
+
+func (e *{{ .ErrName }}) Unwrap() error {
+  return e.err
+}
+
+func (e *{{ .ErrName }}) AsGrr(err grr.Error) (Error, bool) {
+	E := reflect.TypeOf(err)
+
+	var last error = e.err
+
+	for {
+		if last == nil {
+			return nil, false
+		}
+
+		if _, ok := last.(Error); !ok {
+			return nil, false
+		}
+
+		if reflect.TypeOf(last).ConvertibleTo(E) {
+			return reflect.ValueOf(last).Convert(E).Interface().(Error), true
+		}
+
+		last = last.(Error).Unwrap()
+	}
+}
+
+
+func (e *{{ .ErrName }}) IsGrr(err grr.Error) bool {
+  _, ok := e.AsGrr(err)
+  return ok
+}
+
+func (e *{{ .ErrName }}) AddTrait(trait string, value string) grr.Error {
+  e.traits[trait] = value
+  return e
+}
+
+func (e *{{ .ErrName }}) GetTrait(key grr.Trait) (string, bool) {
+	trait, ok := e.traits[key]
+	return trait, ok
+}
+
+func (e *{{ .ErrName }}) GetTraits() map[grr.Trait]string {
+	traits := make(map[grr.Trait]string)
+	for k, v := range e.traits {
+		traits[k] = v
+	}
+	return traits
+}
+
+
+func (e *{{ .ErrName }}) AddOp(op string) grr.Error {
+  e.op = op
+  return e
+}
+
+func (e *{{ .ErrName }}) GetOp() (string, bool) {
+  return e.op, e.op != ""
+}
+
+func (e *{{ .ErrName }}) AddError(err error) grr.Error {
+  e.err = err
+  return e
+}
+
+func New{{ .ErrName }}({{ range $i, $pair := .Vars }}{{ $pair.Literal }} {{ $pair.Type }}{{ if notlast $i $varlen}}, {{ end }}{{ end }}) grr.Error {
+  return &{{ .ErrName }}{
+    {{- range .Vars }}
+    {{ .Literal }}: {{ .Literal }},
+    {{- end }}
+  }
+}
