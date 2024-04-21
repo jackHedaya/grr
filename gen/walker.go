@@ -63,7 +63,12 @@ func FindAndReplaceErrorsInDir(directory string) {
 			continue
 		}
 
-		visitor := &errFinder{fset: pkg.Fset, info: pkg.TypesInfo}
+		visitor := &errFinder{
+			fset: pkg.Fset,
+			info: pkg.TypesInfo,
+			pkg:  pkg,
+		}
+
 		for _, file := range pkg.Syntax {
 			ast.Walk(visitor, file)
 		}
@@ -74,6 +79,7 @@ func FindAndReplaceErrorsInDir(directory string) {
 type errFinder struct {
 	fset *token.FileSet
 	info *types.Info
+	pkg  *packages.Package
 }
 
 // Visit implements the ast.Visitor interface for errFinder.
@@ -105,7 +111,12 @@ func (f *errFinder) Visit(n ast.Node) ast.Visitor {
 	args = args[1:]
 
 	// generate the error function
-	errFunc, err := GenerateErrorFunction(msg, args...)
+	errFunc, err := GenerateErrorFile(
+		grrNode.PkgImportPath,
+		f.pkg.Name,
+		msg,
+		args...,
+	)
 
 	if err != nil {
 		fmt.Printf("Error generating error function: %s\n", err)
@@ -113,7 +124,28 @@ func (f *errFinder) Visit(n ast.Node) ast.Visitor {
 		return nil
 	}
 
-	os.WriteFile(fmt.Sprintf("grr.gen.go", pos.Filename), []byte(errFunc), 0644)
+	// get an arbitrary Go file from the package
+	if len(f.pkg.GoFiles) == 0 {
+		fmt.Printf("No Go files found in package: %s\n", f.pkg.PkgPath)
+		return nil
+	}
+
+	file := f.pkg.GoFiles[0]
+
+	// strip the file name from the path
+	pkgPath := filepath.Dir(file)
+
+	writePath := filepath.Join(pkgPath, "grr.gen.go")
+
+	fmt.Printf("Writing to: %s\n", writePath)
+
+	err = os.WriteFile(writePath, []byte(errFunc), 0644)
+
+	if err != nil {
+		fmt.Printf("Error writing to file: %s\n", err)
+		grr.Trace(err)
+		return nil
+	}
 
 	return f
 }
@@ -154,18 +186,20 @@ func (f *errFinder) getGrrNode(n ast.Node) (*GrrNode, bool) {
 	}
 
 	return &GrrNode{
-		Pos:      f.fset.Position(callExpr.Pos()),
-		CallExpr: callExpr,
-		SelExpr:  selExpr,
-		Ident:    ident,
+		Pos:           f.fset.Position(callExpr.Pos()),
+		CallExpr:      callExpr,
+		SelExpr:       selExpr,
+		Ident:         ident,
+		PkgImportPath: pkg.Path(),
 	}, true
 }
 
 type GrrNode struct {
-	Pos      token.Position
-	CallExpr *ast.CallExpr
-	SelExpr  *ast.SelectorExpr
-	Ident    *ast.Ident
+	Pos           token.Position
+	CallExpr      *ast.CallExpr
+	SelExpr       *ast.SelectorExpr
+	Ident         *ast.Ident
+	PkgImportPath string
 }
 
 func ExprToArg(fset *token.FileSet, arg ast.Expr, info *types.Info) FnArg {

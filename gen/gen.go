@@ -26,14 +26,16 @@ type FnArg struct {
 }
 
 type TemplateData struct {
+	PkgName string
 	ErrName string
 	Vars    []FnArg
 	Message string
+	Imports []string
 }
 
 var TrIsInternal = grr.NewTrait("IsInternal")
 
-func GenerateErrorFunction(errMsg string, args ...FnArg) (string, error) {
+func GenerateErrorFile(grrImportPath string, pkgName string, errMsg string, args ...FnArg) (string, error) {
 	op := "Generate"
 
 	if len(errMsg) == 0 || errMsg == "\"\"" {
@@ -59,15 +61,23 @@ func GenerateErrorFunction(errMsg string, args ...FnArg) (string, error) {
 		return "", grr.Errorf("NoErrorName: error name not found in error message")
 	}
 
+	imports := []string{
+		"fmt",
+		"reflect",
+		grrImportPath,
+	}
+
 	// extract the error message from the message
 	errMsg = strings.TrimSpace(strings.Join(split[1:], ""))
 
 	var buf strings.Builder
 
 	err := tmplGet.Execute(&buf, TemplateData{
+		PkgName: pkgName,
 		ErrName: errName,
 		Vars:    args,
 		Message: errMsg,
+		Imports: imports,
 	})
 
 	if err != nil {

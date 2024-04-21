@@ -1,4 +1,11 @@
+package {{ .PkgName }}
 {{$varlen := len .Vars}}
+
+import (
+  {{- range .Imports }}
+  "{{ . }}"
+  {{- end }}
+)
 
 type {{ .ErrName }} struct {
   err error
@@ -12,6 +19,14 @@ type {{ .ErrName }} struct {
 
 var _ grr.Error = &{{ .ErrName }}{}
 
+func New{{ .ErrName }}({{ range $i, $pair := .Vars }}{{ $pair.Literal }} {{ $pair.Type }}{{ if notlast $i $varlen}}, {{ end }}{{ end }}) grr.Error {
+  return &{{ .ErrName }}{
+    {{- range .Vars }}
+    {{ .Literal }}: {{ .Literal }},
+    {{- end }}
+  }
+}
+
 func (e *{{ .ErrName }}) Error() string {
   return fmt.Sprintf("{{ .Message }}", {{ range $i, $pair := .Vars }}e.{{ $pair.Literal }}{{ if notlast $i $varlen}}, {{ end }}{{ end }})
 }
@@ -20,7 +35,7 @@ func (e *{{ .ErrName }}) Unwrap() error {
   return e.err
 }
 
-func (e *{{ .ErrName }}) AsGrr(err grr.Error) (Error, bool) {
+func (e *{{ .ErrName }}) AsGrr(err grr.Error) (grr.Error, bool) {
 	E := reflect.TypeOf(err)
 
 	var last error = e.err
@@ -30,15 +45,15 @@ func (e *{{ .ErrName }}) AsGrr(err grr.Error) (Error, bool) {
 			return nil, false
 		}
 
-		if _, ok := last.(Error); !ok {
+		if _, ok := last.(grr.Error); !ok {
 			return nil, false
 		}
 
 		if reflect.TypeOf(last).ConvertibleTo(E) {
-			return reflect.ValueOf(last).Convert(E).Interface().(Error), true
+			return reflect.ValueOf(last).Convert(E).Interface().(grr.Error), true
 		}
 
-		last = last.(Error).Unwrap()
+		last = last.(grr.Error).Unwrap()
 	}
 }
 
@@ -48,7 +63,7 @@ func (e *{{ .ErrName }}) IsGrr(err grr.Error) bool {
   return ok
 }
 
-func (e *{{ .ErrName }}) AddTrait(trait string, value string) grr.Error {
+func (e *{{ .ErrName }}) AddTrait(trait grr.Trait, value string) grr.Error {
   e.traits[trait] = value
   return e
 }
@@ -72,8 +87,8 @@ func (e *{{ .ErrName }}) AddOp(op string) grr.Error {
   return e
 }
 
-func (e *{{ .ErrName }}) GetOp() (string, bool) {
-  return e.op, e.op != ""
+func (e *{{ .ErrName }}) GetOp() string {
+  return e.op
 }
 
 func (e *{{ .ErrName }}) AddError(err error) grr.Error {
@@ -81,10 +96,35 @@ func (e *{{ .ErrName }}) AddError(err error) grr.Error {
   return e
 }
 
-func New{{ .ErrName }}({{ range $i, $pair := .Vars }}{{ $pair.Literal }} {{ $pair.Type }}{{ if notlast $i $varlen}}, {{ end }}{{ end }}) grr.Error {
-  return &{{ .ErrName }}{
-    {{- range .Vars }}
-    {{ .Literal }}: {{ .Literal }},
-    {{- end }}
-  }
+func (e *{{ .ErrName }}) Trace() {
+	var err error = e
+	var errs []error
+
+	for {
+		errs = append(errs, err)
+
+		if casted, ok := err.(grr.Error); !ok || casted.Unwrap() == nil {
+			break
+		}
+
+		err = err.(grr.Error).Unwrap()
+	}
+
+	for i := len(errs) - 1; i >= 0; i-- {
+		if i != len(errs)-1 {
+			fmt.Printf("|- ")
+		}
+
+		fmt.Print(errs[i].Error())
+
+		if grr.IsGrr(errs[i]) {
+			op := errs[i].(grr.Error).GetOp()
+
+			if op != "" {
+				fmt.Printf("; op: %s", op)
+			}
+		}
+
+		fmt.Println()
+	}
 }
