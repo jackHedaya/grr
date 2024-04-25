@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-
 	"github.com/jackHedaya/grr/grr"
 )
 

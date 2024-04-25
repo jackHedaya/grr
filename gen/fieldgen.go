@@ -18,9 +18,14 @@ type FieldGenerator struct {
 
 func NewFieldGenerator(fset *token.FileSet, info *types.Info) *FieldGenerator {
 	return &FieldGenerator{
-		fset:       fset,
-		info:       info,
-		nameCounts: make(map[string]int),
+		fset: fset,
+		info: info,
+		nameCounts: map[string]int{
+			// Ensuring that the intrinsic names are unique
+			"err":    1,
+			"traits": 1,
+			"op":     1,
+		},
 	}
 }
 

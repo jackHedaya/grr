@@ -3,7 +3,6 @@ package gen
 import (
 	"bytes"
 	_ "embed"
-	"errors"
 	"go/format"
 	"os"
 	"regexp"
@@ -58,7 +57,7 @@ type GenerateFileArgs struct {
 }
 
 func (f *grrWalker) GenerateErrorStruct(params GenerateFileArgs) (*GeneratedError, error) {
-	op := "Generate"
+	op := "GenerateStruct"
 
 	errMsg := params.ErrMsg
 	args := params.Args
@@ -84,7 +83,7 @@ func (f *grrWalker) GenerateErrorStruct(params GenerateFileArgs) (*GeneratedErro
 	matches := re.FindStringSubmatch(errMsg)
 
 	if len(matches) < 3 {
-		return nil, errors.New("NoErrorName: error name not found in error message")
+		return nil, grr.Errorf("NoErrorName: error name not found in error message")
 	}
 
 	errName := "Err" + matches[1]
@@ -177,7 +176,7 @@ func GenDefaultImports() []string {
 }
 
 func isAlreadyDefined(f *grrWalker, errName string, args []GrrGenErrorField, errMsg string) (bool, bool) {
-	errs := f.generatedErrors
+	errs := utils.Merge(f.prevErrors, f.generatedErrors)
 
 	// check if the error name is already defined
 	if _, ok := errs[errName]; !ok {

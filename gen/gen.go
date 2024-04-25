@@ -3,6 +3,7 @@ package gen
 import (
 	"fmt"
 	"go/ast"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,12 +45,19 @@ func GenerateEntry(directory string) error {
 			continue
 		}
 
+		// get previous errors
+		prevErrors, err := LoadPreviousErrors(pkg.PkgPath)
+
+		if err != nil {
+			return grr.Errorf("FailedToLoadPreviousErrors: failed to load previous errors").AddError(err)
+		}
+
 		pkgWalker := &grrWalker{
 			fset:            pkg.Fset,
 			info:            pkg.TypesInfo,
 			pkg:             pkg,
 			generatedErrors: map[string]GeneratedError{},
-			prevErrors:      map[string]GeneratedError{},
+			prevErrors:      prevErrors,
 			imports:         utils.NewSetFromSlice(GenDefaultImports()),
 		}
 
@@ -86,7 +94,7 @@ func GenerateEntry(directory string) error {
 
 		fmt.Printf("Writing to: %s\n", writePath)
 
-		err = os.WriteFile(writePath, code, 0644)
+		err = os.WriteFile(writePath, code, fs.FileMode(os.O_APPEND)|fs.FileMode(os.O_CREATE)|fs.FileMode(os.O_WRONLY))
 
 		if err != nil {
 			return grr.Errorf("FailedToWriteFile: failed to write generated file").AddError(err)

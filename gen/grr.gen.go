@@ -2,9 +2,8 @@ package gen
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/jackHedaya/grr/grr"
+	"strings"
 )
 
 // #############################################################################
@@ -289,6 +288,74 @@ func (e *ErrFailedToFormat) Trace() {
 }
 
 // #############################################################################
+// # ErrFailedToGenerateStruct
+// #############################################################################
+
+type ErrFailedToGenerateStruct struct {
+	err    error
+	op     string
+	traits map[grr.Trait]string
+}
+
+var _ grr.Error = &ErrFailedToGenerateStruct{}
+
+func NewErrFailedToGenerateStruct() grr.Error {
+	return &ErrFailedToGenerateStruct{}
+}
+
+func (e *ErrFailedToGenerateStruct) Error() string {
+	return fmt.Sprintf("failed to generate error struct")
+}
+
+func (e *ErrFailedToGenerateStruct) Unwrap() error {
+	return e.err
+}
+
+func (e *ErrFailedToGenerateStruct) UnwrapAll() error {
+	return grr.UnwrapAll(e)
+}
+
+func (e *ErrFailedToGenerateStruct) AsGrr(err grr.Error) (grr.Error, bool) {
+	return grr.AsGrr(e, err)
+}
+
+func (e *ErrFailedToGenerateStruct) AddTrait(trait grr.Trait, value string) grr.Error {
+	e.traits[trait] = value
+	return e
+}
+
+func (e *ErrFailedToGenerateStruct) GetTrait(key grr.Trait) (string, bool) {
+	trait, ok := e.traits[key]
+	return trait, ok
+}
+
+func (e *ErrFailedToGenerateStruct) GetTraits() map[grr.Trait]string {
+	traits := make(map[grr.Trait]string)
+	for k, v := range e.traits {
+		traits[k] = v
+	}
+	return traits
+}
+
+func (e *ErrFailedToGenerateStruct) AddOp(op string) grr.Error {
+	e.op = op
+	return e
+}
+
+func (e *ErrFailedToGenerateStruct) GetOp() string {
+	return e.op
+}
+
+func (e *ErrFailedToGenerateStruct) AddError(err error) grr.Error {
+	e.err = err
+	return e
+}
+
+func (e *ErrFailedToGenerateStruct) Trace() {
+	grr.Trace(e)
+}
+
+// #############################################################################
 // # ErrFailedToGetPackagePath
 // #############################################################################
 
@@ -357,6 +424,74 @@ func (e *ErrFailedToGetPackagePath) Trace() {
 }
 
 // #############################################################################
+// # ErrFailedToLoad
+// #############################################################################
+
+type ErrFailedToLoad struct {
+	err    error
+	op     string
+	traits map[grr.Trait]string
+}
+
+var _ grr.Error = &ErrFailedToLoad{}
+
+func NewErrFailedToLoad() grr.Error {
+	return &ErrFailedToLoad{}
+}
+
+func (e *ErrFailedToLoad) Error() string {
+	return fmt.Sprintf("failed to load package")
+}
+
+func (e *ErrFailedToLoad) Unwrap() error {
+	return e.err
+}
+
+func (e *ErrFailedToLoad) UnwrapAll() error {
+	return grr.UnwrapAll(e)
+}
+
+func (e *ErrFailedToLoad) AsGrr(err grr.Error) (grr.Error, bool) {
+	return grr.AsGrr(e, err)
+}
+
+func (e *ErrFailedToLoad) AddTrait(trait grr.Trait, value string) grr.Error {
+	e.traits[trait] = value
+	return e
+}
+
+func (e *ErrFailedToLoad) GetTrait(key grr.Trait) (string, bool) {
+	trait, ok := e.traits[key]
+	return trait, ok
+}
+
+func (e *ErrFailedToLoad) GetTraits() map[grr.Trait]string {
+	traits := make(map[grr.Trait]string)
+	for k, v := range e.traits {
+		traits[k] = v
+	}
+	return traits
+}
+
+func (e *ErrFailedToLoad) AddOp(op string) grr.Error {
+	e.op = op
+	return e
+}
+
+func (e *ErrFailedToLoad) GetOp() string {
+	return e.op
+}
+
+func (e *ErrFailedToLoad) AddError(err error) grr.Error {
+	e.err = err
+	return e
+}
+
+func (e *ErrFailedToLoad) Trace() {
+	grr.Trace(e)
+}
+
+// #############################################################################
 // # ErrFailedToLoadPackages
 // #############################################################################
 
@@ -421,6 +556,74 @@ func (e *ErrFailedToLoadPackages) AddError(err error) grr.Error {
 }
 
 func (e *ErrFailedToLoadPackages) Trace() {
+	grr.Trace(e)
+}
+
+// #############################################################################
+// # ErrFailedToLoadPreviousErrors
+// #############################################################################
+
+type ErrFailedToLoadPreviousErrors struct {
+	err    error
+	op     string
+	traits map[grr.Trait]string
+}
+
+var _ grr.Error = &ErrFailedToLoadPreviousErrors{}
+
+func NewErrFailedToLoadPreviousErrors() grr.Error {
+	return &ErrFailedToLoadPreviousErrors{}
+}
+
+func (e *ErrFailedToLoadPreviousErrors) Error() string {
+	return fmt.Sprintf("failed to load previous errors")
+}
+
+func (e *ErrFailedToLoadPreviousErrors) Unwrap() error {
+	return e.err
+}
+
+func (e *ErrFailedToLoadPreviousErrors) UnwrapAll() error {
+	return grr.UnwrapAll(e)
+}
+
+func (e *ErrFailedToLoadPreviousErrors) AsGrr(err grr.Error) (grr.Error, bool) {
+	return grr.AsGrr(e, err)
+}
+
+func (e *ErrFailedToLoadPreviousErrors) AddTrait(trait grr.Trait, value string) grr.Error {
+	e.traits[trait] = value
+	return e
+}
+
+func (e *ErrFailedToLoadPreviousErrors) GetTrait(key grr.Trait) (string, bool) {
+	trait, ok := e.traits[key]
+	return trait, ok
+}
+
+func (e *ErrFailedToLoadPreviousErrors) GetTraits() map[grr.Trait]string {
+	traits := make(map[grr.Trait]string)
+	for k, v := range e.traits {
+		traits[k] = v
+	}
+	return traits
+}
+
+func (e *ErrFailedToLoadPreviousErrors) AddOp(op string) grr.Error {
+	e.op = op
+	return e
+}
+
+func (e *ErrFailedToLoadPreviousErrors) GetOp() string {
+	return e.op
+}
+
+func (e *ErrFailedToLoadPreviousErrors) AddError(err error) grr.Error {
+	e.err = err
+	return e
+}
+
+func (e *ErrFailedToLoadPreviousErrors) Trace() {
 	grr.Trace(e)
 }
 
@@ -764,5 +967,76 @@ func (e *ErrNoPackagesFound) AddError(err error) grr.Error {
 }
 
 func (e *ErrNoPackagesFound) Trace() {
+	grr.Trace(e)
+}
+
+// #############################################################################
+// # ErrOneExpected
+// #############################################################################
+
+type ErrOneExpected struct {
+	err    error
+	op     string
+	traits map[grr.Trait]string
+	arg    int
+}
+
+var _ grr.Error = &ErrOneExpected{}
+
+func NewErrOneExpected(arg int) grr.Error {
+	return &ErrOneExpected{
+		arg: arg,
+	}
+}
+
+func (e *ErrOneExpected) Error() string {
+	return fmt.Sprintf("expected one package, got %d", e.arg)
+}
+
+func (e *ErrOneExpected) Unwrap() error {
+	return e.err
+}
+
+func (e *ErrOneExpected) UnwrapAll() error {
+	return grr.UnwrapAll(e)
+}
+
+func (e *ErrOneExpected) AsGrr(err grr.Error) (grr.Error, bool) {
+	return grr.AsGrr(e, err)
+}
+
+func (e *ErrOneExpected) AddTrait(trait grr.Trait, value string) grr.Error {
+	e.traits[trait] = value
+	return e
+}
+
+func (e *ErrOneExpected) GetTrait(key grr.Trait) (string, bool) {
+	trait, ok := e.traits[key]
+	return trait, ok
+}
+
+func (e *ErrOneExpected) GetTraits() map[grr.Trait]string {
+	traits := make(map[grr.Trait]string)
+	for k, v := range e.traits {
+		traits[k] = v
+	}
+	return traits
+}
+
+func (e *ErrOneExpected) AddOp(op string) grr.Error {
+	e.op = op
+	return e
+}
+
+func (e *ErrOneExpected) GetOp() string {
+	return e.op
+}
+
+func (e *ErrOneExpected) AddError(err error) grr.Error {
+	e.err = err
+	return e
+}
+
+func (e *ErrOneExpected) Trace() {
 	grr.Trace(e)
 }

@@ -20,3 +20,14 @@ func PairValues[K, V any](pairs []Pair[K, V]) []V {
 	}
 	return values
 }
+
+func Merge[K comparable, V any](a, b map[K]V) map[K]V {
+	m := make(map[K]V, len(a)+len(b))
+	for k, v := range a {
+		m[k] = v
+	}
+	for k, v := range b {
+		m[k] = v
+	}
+	return m
+}

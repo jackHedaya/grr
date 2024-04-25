@@ -2,7 +2,6 @@ package clean
 
 import (
 	"fmt"
-
 	"github.com/jackHedaya/grr/grr"
 )
 
