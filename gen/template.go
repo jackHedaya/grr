@@ -163,7 +163,7 @@ func GenerateErrorFile(pkgName string, imports []string, errors map[string]Gener
 		// write for debugging
 		os.WriteFile("grr.failed.gen.go", headerBuff.Bytes(), 0644)
 
-		return nil, grr.Errorf("FailedToFormat: failed to format the generated code").
+		return nil, grr.Errorf("FailedToFormat: failed to format source").
 			AddError(err).
 			AddOp(op)
 	}
