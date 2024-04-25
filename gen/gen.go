@@ -102,7 +102,11 @@ func GenerateEntry(directory string) error {
 			return grr.Errorf("FailedToWriteFile: failed to write generated file").AddError(err)
 		}
 
-		writeFiles(pkg.Fset, pkg, pkgPath)
+		err = writeFiles(pkg.Fset, pkg, pkgPath)
+
+		if err != nil {
+			return grr.Errorf("ASTWriteError: failed to write AST files").AddError(err)
+		}
 	}
 
 	return nil
