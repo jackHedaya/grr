@@ -17,7 +17,7 @@ type ErrFailedToClean struct {
 
 var _ grr.Error = &ErrFailedToClean{}
 
-func NewErrFailedToClean() grr.Error {
+func NewErrFailedToClean() *ErrFailedToClean {
 	return &ErrFailedToClean{}
 }
 
@@ -86,7 +86,7 @@ type ErrFailedToDelete struct {
 
 var _ grr.Error = &ErrFailedToDelete{}
 
-func NewErrFailedToDelete(path string) grr.Error {
+func NewErrFailedToDelete(path string) *ErrFailedToDelete {
 	return &ErrFailedToDelete{
 		path: path,
 	}
@@ -156,7 +156,7 @@ type ErrFailedToResolveDir struct {
 
 var _ grr.Error = &ErrFailedToResolveDir{}
 
-func NewErrFailedToResolveDir() grr.Error {
+func NewErrFailedToResolveDir() *ErrFailedToResolveDir {
 	return &ErrFailedToResolveDir{}
 }
 
@@ -225,7 +225,7 @@ type ErrFailedToWalk struct {
 
 var _ grr.Error = &ErrFailedToWalk{}
 
-func NewErrFailedToWalk(path string) grr.Error {
+func NewErrFailedToWalk(path string) *ErrFailedToWalk {
 	return &ErrFailedToWalk{
 		path: path,
 	}

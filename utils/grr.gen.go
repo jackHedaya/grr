@@ -17,7 +17,7 @@ type ErrFailedToGetPackagePath struct {
 
 var _ grr.Error = &ErrFailedToGetPackagePath{}
 
-func NewErrFailedToGetPackagePath() grr.Error {
+func NewErrFailedToGetPackagePath() *ErrFailedToGetPackagePath {
 	return &ErrFailedToGetPackagePath{}
 }
 
@@ -85,7 +85,7 @@ type ErrFailedToResolveDir struct {
 
 var _ grr.Error = &ErrFailedToResolveDir{}
 
-func NewErrFailedToResolveDir() grr.Error {
+func NewErrFailedToResolveDir() *ErrFailedToResolveDir {
 	return &ErrFailedToResolveDir{}
 }
 

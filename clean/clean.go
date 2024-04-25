@@ -21,8 +21,13 @@ func CleanEntry(directory string) error {
 			return grr.Errorf("FailedToWalk: Failed to walk %s", path).AddError(err)
 		}
 
-		if filepath.Ext(path) == ".gen.go" {
+		if info.IsDir() && info.Name() == ".git" {
+			return filepath.SkipDir
+		}
+
+		if filepath.Base(path) == "grr.gen.go" {
 			err := os.Remove(path)
+
 			if err != nil {
 				return grr.Errorf("FailedToDelete: Failed to delete %s", path).AddError(err)
 			}

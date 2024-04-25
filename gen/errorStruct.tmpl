@@ -11,7 +11,7 @@ type {{ .ErrName }} struct {
 
 var _ grr.Error = &{{ .ErrName }}{}
 
-func New{{ .ErrName }}({{ range $i, $pair := .Vars }}{{ $pair.Name }} {{ $pair.Type }}{{ if notlast $i $varlen}}, {{ end }}{{ end }}) grr.Error {
+func New{{ .ErrName }}({{ range $i, $pair := .Vars }}{{ $pair.Name }} {{ $pair.Type }}{{ if notlast $i $varlen}}, {{ end }}{{ end }}) *{{ .ErrName }} {
   return &{{ .ErrName }}{
     {{- range .Vars }}
     {{ .Name }}: {{ .Name }},

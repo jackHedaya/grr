@@ -19,7 +19,7 @@ type ErrAlreadyDefined struct {
 
 var _ grr.Error = &ErrAlreadyDefined{}
 
-func NewErrAlreadyDefined(errName string) grr.Error {
+func NewErrAlreadyDefined(errName string) *ErrAlreadyDefined {
 	return &ErrAlreadyDefined{
 		errName: errName,
 	}
@@ -90,7 +90,7 @@ type ErrConflict struct {
 
 var _ grr.Error = &ErrConflict{}
 
-func NewErrConflict(errName string) grr.Error {
+func NewErrConflict(errName string) *ErrConflict {
 	return &ErrConflict{
 		errName: errName,
 	}
@@ -161,7 +161,7 @@ type ErrFailedToExecuteTemplate struct {
 
 var _ grr.Error = &ErrFailedToExecuteTemplate{}
 
-func NewErrFailedToExecuteTemplate(stringsBuilder strings.Builder) grr.Error {
+func NewErrFailedToExecuteTemplate(stringsBuilder strings.Builder) *ErrFailedToExecuteTemplate {
 	return &ErrFailedToExecuteTemplate{
 		stringsBuilder: stringsBuilder,
 	}
@@ -231,7 +231,7 @@ type ErrFailedToFormat struct {
 
 var _ grr.Error = &ErrFailedToFormat{}
 
-func NewErrFailedToFormat() grr.Error {
+func NewErrFailedToFormat() *ErrFailedToFormat {
 	return &ErrFailedToFormat{}
 }
 
@@ -299,7 +299,7 @@ type ErrFailedToGenerateStruct struct {
 
 var _ grr.Error = &ErrFailedToGenerateStruct{}
 
-func NewErrFailedToGenerateStruct() grr.Error {
+func NewErrFailedToGenerateStruct() *ErrFailedToGenerateStruct {
 	return &ErrFailedToGenerateStruct{}
 }
 
@@ -367,7 +367,7 @@ type ErrFailedToGetPackagePath struct {
 
 var _ grr.Error = &ErrFailedToGetPackagePath{}
 
-func NewErrFailedToGetPackagePath() grr.Error {
+func NewErrFailedToGetPackagePath() *ErrFailedToGetPackagePath {
 	return &ErrFailedToGetPackagePath{}
 }
 
@@ -435,7 +435,7 @@ type ErrFailedToLoad struct {
 
 var _ grr.Error = &ErrFailedToLoad{}
 
-func NewErrFailedToLoad() grr.Error {
+func NewErrFailedToLoad() *ErrFailedToLoad {
 	return &ErrFailedToLoad{}
 }
 
@@ -503,7 +503,7 @@ type ErrFailedToLoadPackages struct {
 
 var _ grr.Error = &ErrFailedToLoadPackages{}
 
-func NewErrFailedToLoadPackages() grr.Error {
+func NewErrFailedToLoadPackages() *ErrFailedToLoadPackages {
 	return &ErrFailedToLoadPackages{}
 }
 
@@ -571,7 +571,7 @@ type ErrFailedToLoadPreviousErrors struct {
 
 var _ grr.Error = &ErrFailedToLoadPreviousErrors{}
 
-func NewErrFailedToLoadPreviousErrors() grr.Error {
+func NewErrFailedToLoadPreviousErrors() *ErrFailedToLoadPreviousErrors {
 	return &ErrFailedToLoadPreviousErrors{}
 }
 
@@ -639,7 +639,7 @@ type ErrFailedToWriteFile struct {
 
 var _ grr.Error = &ErrFailedToWriteFile{}
 
-func NewErrFailedToWriteFile() grr.Error {
+func NewErrFailedToWriteFile() *ErrFailedToWriteFile {
 	return &ErrFailedToWriteFile{}
 }
 
@@ -707,7 +707,7 @@ type ErrGenerateErrorFile struct {
 
 var _ grr.Error = &ErrGenerateErrorFile{}
 
-func NewErrGenerateErrorFile() grr.Error {
+func NewErrGenerateErrorFile() *ErrGenerateErrorFile {
 	return &ErrGenerateErrorFile{}
 }
 
@@ -775,7 +775,7 @@ type ErrNoErrorMessage struct {
 
 var _ grr.Error = &ErrNoErrorMessage{}
 
-func NewErrNoErrorMessage() grr.Error {
+func NewErrNoErrorMessage() *ErrNoErrorMessage {
 	return &ErrNoErrorMessage{}
 }
 
@@ -843,7 +843,7 @@ type ErrNoErrorName struct {
 
 var _ grr.Error = &ErrNoErrorName{}
 
-func NewErrNoErrorName() grr.Error {
+func NewErrNoErrorName() *ErrNoErrorName {
 	return &ErrNoErrorName{}
 }
 
@@ -912,7 +912,7 @@ type ErrNoPackagesFound struct {
 
 var _ grr.Error = &ErrNoPackagesFound{}
 
-func NewErrNoPackagesFound(stringsBuilder strings.Builder) grr.Error {
+func NewErrNoPackagesFound(stringsBuilder strings.Builder) *ErrNoPackagesFound {
 	return &ErrNoPackagesFound{
 		stringsBuilder: stringsBuilder,
 	}
@@ -983,7 +983,7 @@ type ErrOneExpected struct {
 
 var _ grr.Error = &ErrOneExpected{}
 
-func NewErrOneExpected(arg int) grr.Error {
+func NewErrOneExpected(arg int) *ErrOneExpected {
 	return &ErrOneExpected{
 		arg: arg,
 	}

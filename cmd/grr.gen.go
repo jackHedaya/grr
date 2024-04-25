@@ -18,7 +18,7 @@ type ErrPathNotFound struct {
 
 var _ grr.Error = &ErrPathNotFound{}
 
-func NewErrPathNotFound(path string) grr.Error {
+func NewErrPathNotFound(path string) *ErrPathNotFound {
 	return &ErrPathNotFound{
 		path: path,
 	}

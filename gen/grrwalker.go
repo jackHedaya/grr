@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackHedaya/grr/grr"
 	"github.com/jackHedaya/grr/utils"
-
+	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -85,15 +85,31 @@ func (walker *grrWalker) Visit(n ast.Node) ast.Visitor {
 		},
 	)
 
-	if _, ok := err.(*ErrNoErrorName); ok {
-		fmt.Printf("Error found with no error name in error message: %s. Skipping...\n", msg)
-		return walker
-	}
+	// if _, ok := err.(*ErrNoErrorName); ok {
+	// 	fmt.Printf("Error found with no error name in error message: %s. Skipping...\n", msg)
+	// 	return walker
+	// }
 
 	if err != nil {
 		grr.Errorf("FailedToGenerateStruct: failed to generate error struct").AddError(err).Trace()
 		return nil
 	}
+
+	newFuncIdent := ast.NewIdent(genErr.Name)
+
+	newCallExpr := &ast.CallExpr{
+		Fun:  newFuncIdent,
+		Args: callExpr.Args,
+	}
+
+	// replace the grr.Errorf call with the generated error struct
+	astutil.Apply(n, func(cursor *astutil.Cursor) bool {
+		if cursor.Node() == callExpr {
+			cursor.Replace(newCallExpr)
+		}
+
+		return true
+	}, nil)
 
 	walker.generatedErrors[genErr.Name] = *genErr
 

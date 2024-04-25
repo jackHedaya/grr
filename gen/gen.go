@@ -3,6 +3,8 @@ package gen
 import (
 	"fmt"
 	"go/ast"
+	"go/printer"
+	"go/token"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -94,10 +96,38 @@ func GenerateEntry(directory string) error {
 
 		fmt.Printf("Writing to: %s\n", writePath)
 
-		err = os.WriteFile(writePath, code, fs.FileMode(os.O_APPEND)|fs.FileMode(os.O_CREATE)|fs.FileMode(os.O_WRONLY))
+		err = os.WriteFile(writePath, code, fs.FileMode(os.O_APPEND)|fs.FileMode(os.O_CREATE))
 
 		if err != nil {
 			return grr.Errorf("FailedToWriteFile: failed to write generated file").AddError(err)
+		}
+
+		writeFiles(pkg.Fset, pkg, pkgPath)
+	}
+
+	return nil
+}
+
+func writeFiles(fset *token.FileSet, pkg *packages.Package, outputDir string) error {
+
+	for _, file := range pkg.GoFiles {
+		outputFile := outputDir + "/" + file
+
+		// Create file
+		out, err := os.Create(outputFile)
+		if err != nil {
+			return err
+		}
+
+		// Print the AST back to source code
+		if err := printer.Fprint(out, fset, file); err != nil {
+			out.Close() // Close file on error
+			return err
+		}
+
+		// Close the file
+		if err := out.Close(); err != nil {
+			return err
 		}
 	}
 
