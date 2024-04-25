@@ -1,112 +1,97 @@
 package gen
 
 import (
-	"bytes"
-	_ "embed"
-	"go/format"
+	"fmt"
+	"go/ast"
+	"os"
+	"path/filepath"
 	"strings"
 
-	"text/template"
-
-	"github.com/whiskaway/grr/grr"
+	"github.com/jackHedaya/grr/grr"
+	"github.com/jackHedaya/grr/utils"
+	"golang.org/x/tools/go/packages"
 )
 
-//go:embed errorFunc.tmpl
-var tmpl string
-
-var fns = template.FuncMap{
-	"notlast": func(index int, len int) bool {
-		return index+1 != len
-	},
-}
-
-var tmplGet = template.Must(template.New("").Funcs(fns).Parse(tmpl))
-
-type FnArg struct {
-	Expr string
-	Name string
-	Type string
-}
-
-type TemplateData struct {
-	PkgName string
-	ErrName string
-	Vars    []FnArg
-	Message string
-	Imports []string
-}
-
-var TrIsInternal = grr.NewTrait("IsInternal")
-
-type GenerateFileArgs struct {
-	Imports []string
-	PkgName string
-	ErrMsg  string
-	Args    []FnArg
-}
-
-func GenerateErrorFile(params GenerateFileArgs) (string, error) {
-	op := "Generate"
-
-	errMsg := params.ErrMsg
-	pkgName := params.PkgName
-	args := params.Args
-	imports := params.Imports
-
-	if len(errMsg) == 0 || errMsg == "\"\"" {
-		return "", grr.Errorf("NoErrorMessage: error message not found").
-			AddOp(op)
-	}
-
-	if errMsg[0] == '"' {
-		errMsg = errMsg[1:]
-	}
-
-	if errMsg[len(errMsg)-1] == '"' {
-		errMsg = errMsg[:len(errMsg)-1]
-	}
-
-	// extract the new error name from message: "FileNotFound: a file with name %s was not found" => "FileNotFound"
-	split := strings.Split(errMsg, ":")
-
-	// extract the error name from the message
-	errName := "Err" + strings.TrimSpace(split[0])
-
-	if errName == "" {
-		return "", grr.Errorf("NoErrorName: error name not found in error message")
-	}
-
-	// extract the error message from the message
-	errMsg = strings.TrimSpace(strings.Join(split[1:], ""))
-
-	var buf bytes.Buffer
-
-	err := tmplGet.Execute(&buf, TemplateData{
-		PkgName: pkgName,
-		ErrName: errName,
-		Vars:    args,
-		Message: errMsg,
-		Imports: imports,
-	})
+// GenerateEntry processes all Go files in a directory to find and report grr.Errorf calls.
+func GenerateEntry(directory string) error {
+	// Ensure the directory path is absolute
+	dir, err := utils.ResolveAbsoluteDir(directory)
 
 	if err != nil {
-		return "", grr.Errorf("FailedToExecuteTemplate: something went wrong while generating: %v", strings.Builder{}).
-			AddError(err).
-			AddTrait(TrIsInternal, "true").
-			AddOp(op)
+		return grr.Errorf("unable to determine directory").AddError(err)
 	}
 
-	fmted, err := format.Source(buf.Bytes())
+	// Set up the configuration to load the packages correctly
+	cfg := &packages.Config{
+		Mode: packages.NeedName | packages.NeedFiles | packages.NeedSyntax | packages.NeedTypes | packages.NeedTypesInfo,
+		Dir:  dir,
+	}
 
+	// Load all packages in the directory
+	pkgs, err := packages.Load(cfg, "./...")
 	if err != nil {
-		return "", grr.Errorf("FailedToFormatSource: something went wrong while formatting source: %v", strings.Builder{}).
-			AddError(err).
-			AddOp(op)
+		return grr.Errorf("FailedToLoadPackages: failed to load packages").AddError(err)
 	}
 
-	return string(fmted), nil
-}
+	if len(pkgs) == 0 {
+		return grr.Errorf("NoPackagesFound: no packages found in directory. string builder for testing: %v", strings.Builder{})
+	}
 
-func GenDefaultImports() []string {
-	return []string{"fmt", "reflect"}
+	// Process each package
+	for _, pkg := range pkgs {
+		if len(pkg.Errors) > 0 {
+			fmt.Printf("Ignoring package %s due to errors: %v\n", pkg.PkgPath, pkg.Errors)
+			continue
+		}
+
+		pkgWalker := &grrWalker{
+			fset:            pkg.Fset,
+			info:            pkg.TypesInfo,
+			pkg:             pkg,
+			generatedErrors: map[string]GeneratedError{},
+			prevErrors:      map[string]GeneratedError{},
+			imports:         utils.NewSetFromSlice(GenDefaultImports()),
+		}
+
+		// Load previous errors from grr.gen.go files
+		// err := visitor.LoadPreviousErrors()
+
+		for _, astFile := range pkg.Syntax {
+			ast.Walk(pkgWalker, astFile)
+		}
+
+		pkgPath, err := utils.GetPackagePath(pkg)
+
+		if err != nil {
+			return grr.Errorf("FailedToGetPackagePath: failed to get package path").AddError(err)
+		}
+
+		code, err := GenerateErrorFile(pkg.Name, pkgWalker.imports.ToSlice(), pkgWalker.generatedErrors)
+
+		if err != nil {
+			return grr.Errorf("GenerateErrorFile: failed to generate error file").AddError(err)
+		}
+
+		if len(pkg.GoFiles) == 0 {
+			fmt.Printf("No Go files found in package: %s\n", pkg.PkgPath)
+			continue
+		}
+
+		if len(pkgWalker.generatedErrors) == 0 {
+			fmt.Printf("No grr.Errorf calls found in package: %s\n", pkg.PkgPath)
+			continue
+		}
+
+		writePath := filepath.Join(pkgPath, "grr.gen.go")
+
+		fmt.Printf("Writing to: %s\n", writePath)
+
+		err = os.WriteFile(writePath, code, 0644)
+
+		if err != nil {
+			return grr.Errorf("FailedToWriteFile: failed to write generated file").AddError(err)
+		}
+	}
+
+	return nil
 }

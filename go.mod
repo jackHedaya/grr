@@ -1,4 +1,4 @@
-module github.com/whiskaway/grr
+module github.com/jackHedaya/grr
 
 go 1.22.2
 

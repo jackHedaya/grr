@@ -3,13 +3,14 @@ package grr
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type Error interface {
 	Error() string
 	Unwrap() error
+	UnwrapAll() error
 	AsGrr(err Error) (Error, bool)
-	IsGrr(err Error) bool
 	AddTrait(key Trait, value string) Error
 	GetTrait(key Trait) (string, bool)
 	AddOp(op string) Error
@@ -42,46 +43,11 @@ func (e *grrError) Unwrap() error {
 }
 
 func (e *grrError) UnwrapAll() error {
-	last := e.err
-
-	for {
-		if last == nil {
-			return nil
-		}
-
-		if _, ok := last.(Error); !ok {
-			return last
-		}
-
-		last = last.(Error).Unwrap()
-	}
+	return UnwrapAll(e)
 }
 
 func (e *grrError) AsGrr(err Error) (Error, bool) {
-	E := reflect.TypeOf(err)
-
-	var last error = e.err
-
-	for {
-		if last == nil {
-			return nil, false
-		}
-
-		if _, ok := last.(Error); !ok {
-			return nil, false
-		}
-
-		if reflect.TypeOf(last).ConvertibleTo(E) {
-			return reflect.ValueOf(last).Convert(E).Interface().(Error), true
-		}
-
-		last = last.(Error).Unwrap()
-	}
-}
-
-func (e *grrError) IsGrr(err Error) bool {
-	_, ok := e.AsGrr(err)
-	return ok
+	return AsGrr(e, err)
 }
 
 func (e *grrError) AddTrait(key Trait, value string) Error {
@@ -117,12 +83,26 @@ func (e *grrError) GetTraits() map[Trait]string {
 }
 
 func (e *grrError) Trace() {
+	Trace(e)
+}
+
+func (e *grrError) Strace() string {
+	return Strace(e)
+}
+
+func Trace(err error) {
+	fmt.Println(Strace(err))
+}
+
+func Strace(err error) string {
+	if !IsGrr(err) {
+		return err.Error()
+	}
+
 	// trace like so:
 	// an error occured; op: SomeOp
 	// |- the next level error
 	// |- the next level error
-
-	var err error = e
 	var errs []error
 
 	for {
@@ -135,33 +115,68 @@ func (e *grrError) Trace() {
 		err = err.(Error).Unwrap()
 	}
 
+	var trace strings.Builder
+
 	for i := len(errs) - 1; i >= 0; i-- {
 		if i != len(errs)-1 {
-			fmt.Printf("|- ")
+			trace.WriteString("|- ")
 		}
 
-		fmt.Print(errs[i].Error())
+		trace.WriteString(errs[i].Error())
 
 		if IsGrr(errs[i]) {
 			op := errs[i].(Error).GetOp()
 
 			if op != "" {
-				fmt.Printf("; op: %s", op)
+				trace.WriteString(fmt.Sprintf("; op: %s", op))
 			}
 		}
 
-		fmt.Println()
+		trace.WriteString("\n")
 	}
-}
 
-func Trace(err error) {
-	if IsGrr(err) {
-		err.(Error).Trace()
-		return
-	}
+	return trace.String()
 }
 
 func IsGrr(err error) bool {
 	_, ok := err.(Error)
 	return ok
+}
+
+func AsGrr(e Error, err error) (Error, bool) {
+	E := reflect.TypeOf(err)
+
+	var last error = e.UnwrapAll()
+
+	for {
+		if last == nil {
+			return nil, false
+		}
+
+		if _, ok := last.(Error); !ok {
+			return nil, false
+		}
+
+		if reflect.TypeOf(last).ConvertibleTo(E) {
+			return reflect.ValueOf(last).Convert(E).Interface().(Error), true
+		}
+
+		last = last.(Error).Unwrap()
+	}
+}
+
+func UnwrapAll(e Error) error {
+	last := e.Unwrap()
+
+	for {
+		if last == nil {
+			return nil
+		}
+
+		if _, ok := last.(Error); !ok {
+			return last
+		}
+
+		last = last.(Error).Unwrap()
+	}
 }

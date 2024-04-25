@@ -1,12 +1,4 @@
-package {{ .PkgName }}
 {{$varlen := len .Vars}}
-
-import (
-  {{- range .Imports }}
-  "{{ . }}"
-  {{- end }}
-)
-
 type {{ .ErrName }} struct {
   err error
   op string
@@ -35,32 +27,12 @@ func (e *{{ .ErrName }}) Unwrap() error {
   return e.err
 }
 
-func (e *{{ .ErrName }}) AsGrr(err grr.Error) (grr.Error, bool) {
-	E := reflect.TypeOf(err)
-
-	var last error = e.err
-
-	for {
-		if last == nil {
-			return nil, false
-		}
-
-		if _, ok := last.(grr.Error); !ok {
-			return nil, false
-		}
-
-		if reflect.TypeOf(last).ConvertibleTo(E) {
-			return reflect.ValueOf(last).Convert(E).Interface().(grr.Error), true
-		}
-
-		last = last.(grr.Error).Unwrap()
-	}
+func (e *{{ .ErrName }}) UnwrapAll() error {
+	return grr.UnwrapAll(e)
 }
 
-
-func (e *{{ .ErrName }}) IsGrr(err grr.Error) bool {
-  _, ok := e.AsGrr(err)
-  return ok
+func (e *{{ .ErrName }}) AsGrr(err grr.Error) (grr.Error, bool) {
+	return grr.AsGrr(e, err)
 }
 
 func (e *{{ .ErrName }}) AddTrait(trait grr.Trait, value string) grr.Error {
@@ -96,34 +68,5 @@ func (e *{{ .ErrName }}) AddError(err error) grr.Error {
 }
 
 func (e *{{ .ErrName }}) Trace() {
-	var err error = e
-	var errs []error
-
-	for {
-		errs = append(errs, err)
-
-		if casted, ok := err.(grr.Error); !ok || casted.Unwrap() == nil {
-			break
-		}
-
-		err = err.(grr.Error).Unwrap()
-	}
-
-	for i := len(errs) - 1; i >= 0; i-- {
-		if i != len(errs)-1 {
-			fmt.Printf("|- ")
-		}
-
-		fmt.Print(errs[i].Error())
-
-		if grr.IsGrr(errs[i]) {
-			op := errs[i].(grr.Error).GetOp()
-
-			if op != "" {
-				fmt.Printf("; op: %s", op)
-			}
-		}
-
-		fmt.Println()
-	}
+	grr.Trace(e)
 }

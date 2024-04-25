@@ -1,0 +1,15 @@
+package {{ .PkgName }}
+
+import (
+  {{- range .Imports }}
+  "{{ . }}"
+  {{- end }}
+)
+
+{{$varlen := len .GeneratedErrors}}
+{{- range $idx, $err := .GeneratedErrors }}
+// #############################################################################
+// # {{ $err.Name }}
+// #############################################################################
+{{ $err.GeneratedCode }}
+{{- end }}
