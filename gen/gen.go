@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"go/printer"
 	"go/token"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -96,7 +95,7 @@ func GenerateEntry(directory string) error {
 
 		fmt.Printf("Writing to: %s\n", writePath)
 
-		err = os.WriteFile(writePath, code, fs.FileMode(os.O_APPEND)|fs.FileMode(os.O_CREATE))
+		err = utils.AppendOrCreate(writePath, code)
 
 		if err != nil {
 			return grr.Errorf("FailedToWriteFile: failed to write generated file").AddError(err)
@@ -115,10 +114,9 @@ func GenerateEntry(directory string) error {
 func writeFiles(fset *token.FileSet, pkg *packages.Package, outputDir string) error {
 
 	for _, file := range pkg.GoFiles {
-		outputFile := outputDir + "/" + file
 
 		// Create file
-		out, err := os.Create(outputFile)
+		out, err := os.Create(file)
 		if err != nil {
 			return err
 		}

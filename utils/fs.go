@@ -28,3 +28,16 @@ func GetPackagePath(pkg *packages.Package) (string, error) {
 
 	return checkPath, nil
 }
+
+func AppendOrCreate(filename string, content []byte) error {
+	// Open the file with flags to append and create if it doesn't exist, and set permissions to 0666
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Write content to the file
+	_, err = file.Write(content)
+	return err
+}
