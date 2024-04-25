@@ -1,8 +1,11 @@
 package gen
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"go/ast"
+	"go/format"
 	"go/printer"
 	"go/token"
 	"os"
@@ -64,8 +67,14 @@ func GenerateEntry(directory string) error {
 
 		// Load previous errors from grr.gen.go files
 		// err := visitor.LoadPreviousErrors()
+		if len(pkg.GoFiles) != len(pkg.Syntax) {
+			return grr.Errorf("MismatchedGoFilesAndSyntax: mismatched number of Go files and syntax trees")
+		}
 
-		for _, astFile := range pkg.Syntax {
+		fileToAst := map[string]*ast.File{}
+
+		for idx, astFile := range pkg.Syntax {
+			fileToAst[pkg.GoFiles[idx]] = astFile
 			ast.Walk(pkgWalker, astFile)
 		}
 
@@ -101,36 +110,60 @@ func GenerateEntry(directory string) error {
 			return grr.Errorf("FailedToWriteFile: failed to write generated file").AddError(err)
 		}
 
-		err = writeFiles(pkg.Fset, pkg, pkgPath)
-
-		if err != nil {
-			return grr.Errorf("ASTWriteError: failed to write AST files").AddError(err)
+		for path, fileNode := range fileToAst {
+			err := writeFile(path, pkg.Fset, fileNode)
+			if err != nil {
+				return grr.Errorf("ASTWriteError: failed to write AST files").AddError(err)
+			}
 		}
 	}
 
 	return nil
 }
 
-func writeFiles(fset *token.FileSet, pkg *packages.Package, outputDir string) error {
+func writeFile(path string, fset *token.FileSet, fileNode *ast.File) error {
+	// backup the original file
+	backupPath := path + ".bak"
+	err := os.Rename(path, backupPath)
 
-	for _, file := range pkg.GoFiles {
+	if err != nil {
+		return grr.Errorf("FailedToBackup: failed to backup file").AddError(err)
+	}
 
-		// Create file
-		out, err := os.Create(file)
+	restore := func() {
+		err := os.Rename(backupPath, path)
+
 		if err != nil {
-			return err
+			fmt.Printf("Failed to restore backup: %v\n", err)
 		}
+	}
 
-		// Print the AST back to source code
-		if err := printer.Fprint(out, fset, file); err != nil {
-			out.Close() // Close file on error
-			return err
-		}
+	out, err := os.Create(path)
+	if err != nil {
+		restore()
+		return grr.Errorf("FailedToCreateFile: failed to create file").AddError(err)
+	}
 
-		// Close the file
-		if err := out.Close(); err != nil {
-			return err
-		}
+	defer out.Close()
+
+	var buf bytes.Buffer
+	bufWriter := bufio.NewWriter(&buf)
+
+	if err := printer.Fprint(bufWriter, fset, fileNode); err != nil {
+		restore()
+		return grr.Errorf("FailedToPrint: failed to print AST").AddError(err)
+	}
+
+	fmted, err := format.Source(buf.Bytes())
+
+	if err != nil {
+		restore()
+		return grr.Errorf("FailedToFormat: failed to format source").AddError(err)
+	}
+
+	if _, err := out.Write(fmted); err != nil {
+		restore()
+		return grr.Errorf("FailedToWrite: failed to write to file").AddError(err)
 	}
 
 	return nil
