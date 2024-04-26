@@ -18,6 +18,7 @@ type Error interface {
 	AddError(err error) Error
 	GetTraits() map[Trait]any
 	Trace()
+	Strace() string
 }
 
 // grrError implements the Error interface
@@ -99,10 +100,6 @@ func Strace(err error) string {
 		return err.Error()
 	}
 
-	// trace like so:
-	// an error occured; op: SomeOp
-	// |- the next level error
-	// |- the next level error
 	var errs []error
 
 	for {
@@ -162,6 +159,30 @@ func AsGrr(e Error, err error) (Error, bool) {
 		}
 
 		last = last.(Error).Unwrap()
+	}
+}
+
+// Gets the trait value of the **innermost** grr.Error in the chain
+// This let's you assign a trait to the root error and have it propogate down the stack
+func GetTrait(err error, key Trait) (any, bool) {
+	if !IsGrr(err) {
+		return nil, false
+	}
+
+	bottomGrr := UnwrapAllGrr(err.(Error))
+
+	return bottomGrr.GetTrait(key)
+}
+
+// Unwraps to the bottom-most grr.Error in the chain. This is the closest grr.Error to the root error
+func UnwrapAllGrr(err Error) Error {
+	for {
+		if casted, ok := err.Unwrap().(Error); ok {
+			err = casted
+			continue
+		}
+
+		return err
 	}
 }
 

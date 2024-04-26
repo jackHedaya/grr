@@ -70,3 +70,7 @@ func (e *{{ .ErrName }}) AddError(err error) grr.Error {
 func (e *{{ .ErrName }}) Trace() {
 	grr.Trace(e)
 }
+
+func (e *{{ .ErrName }}) Strace() string {
+	return grr.Strace(e)
+}
