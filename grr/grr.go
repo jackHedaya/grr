@@ -11,12 +11,12 @@ type Error interface {
 	Unwrap() error
 	UnwrapAll() error
 	AsGrr(err Error) (Error, bool)
-	AddTrait(key Trait, value string) Error
-	GetTrait(key Trait) (string, bool)
+	AddTrait(key Trait, value any) Error
+	GetTrait(key Trait) (any, bool)
 	AddOp(op string) Error
 	GetOp() string
 	AddError(err error) Error
-	GetTraits() map[Trait]string
+	GetTraits() map[Trait]any
 	Trace()
 }
 
@@ -27,11 +27,11 @@ type grrError struct {
 	err    error
 	msg    string
 	op     string
-	traits map[Trait]string
+	traits map[Trait]any
 }
 
 func Errorf(format string, args ...interface{}) Error {
-	return &grrError{msg: fmt.Sprintf(format, args...), traits: make(map[Trait]string)}
+	return &grrError{msg: fmt.Sprintf(format, args...), traits: map[Trait]any{}}
 }
 
 func (e *grrError) Error() string {
@@ -50,12 +50,12 @@ func (e *grrError) AsGrr(err Error) (Error, bool) {
 	return AsGrr(e, err)
 }
 
-func (e *grrError) AddTrait(key Trait, value string) Error {
+func (e *grrError) AddTrait(key Trait, value any) Error {
 	e.traits[key] = value
 	return e
 }
 
-func (e *grrError) GetTrait(key Trait) (string, bool) {
+func (e *grrError) GetTrait(key Trait) (any, bool) {
 	trait, ok := e.traits[key]
 	return trait, ok
 }
@@ -74,8 +74,8 @@ func (e *grrError) AddError(err error) Error {
 	return e
 }
 
-func (e *grrError) GetTraits() map[Trait]string {
-	traits := make(map[Trait]string)
+func (e *grrError) GetTraits() map[Trait]any {
+	traits := make(map[Trait]any)
 	for k, v := range e.traits {
 		traits[k] = v
 	}

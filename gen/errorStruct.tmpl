@@ -2,7 +2,7 @@
 type {{ .ErrName }} struct {
   err error
   op string
-  traits map[grr.Trait]string
+  traits map[grr.Trait]any
 
   {{- range .Vars }}
   {{ .Name }} {{ .Type }}
@@ -35,18 +35,18 @@ func (e *{{ .ErrName }}) AsGrr(err grr.Error) (grr.Error, bool) {
 	return grr.AsGrr(e, err)
 }
 
-func (e *{{ .ErrName }}) AddTrait(trait grr.Trait, value string) grr.Error {
+func (e *{{ .ErrName }}) AddTrait(trait grr.Trait, value any) grr.Error {
   e.traits[trait] = value
   return e
 }
 
-func (e *{{ .ErrName }}) GetTrait(key grr.Trait) (string, bool) {
+func (e *{{ .ErrName }}) GetTrait(key grr.Trait) (any, bool) {
 	trait, ok := e.traits[key]
 	return trait, ok
 }
 
-func (e *{{ .ErrName }}) GetTraits() map[grr.Trait]string {
-	traits := make(map[grr.Trait]string)
+func (e *{{ .ErrName }}) GetTraits() map[grr.Trait]any {
+	traits := map[grr.Trait]any{}
 	for k, v := range e.traits {
 		traits[k] = v
 	}
